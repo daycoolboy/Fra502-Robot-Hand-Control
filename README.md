@@ -4,6 +4,15 @@ This project presents a vision-based teleoperation system for a 5-finger robotic
 
 
 ## System Overview
+The system steps is 
+→ Camera  
+→ OpenCV  
+→ Mediapipe  
+→ vision_node.py (ROS2)  
+→ /finger_states  
+→ micro-ROS Agent  
+→ STM32 firmware  
+→ PWM Servo Control  
 
 The complete system consists of 2 major node:
 
@@ -13,17 +22,15 @@ The complete system consists of 2 major node:
 - Evaluates each finger state: open (1) or closed (0)
 - Publishes /finger_states to microros_hand_node with provide [T, I, M, R, P]
 
-### 2. microros_hand_node(STM)
-- STM32G474RE run micro-ROS Client
-- Receives finger states from the agent
-- Generates PWM signals
-- Controls all 5 servos in real time
-
-  
 ```
 /finger_states   (std_msgs/Int32MultiArray)
 ```
 
+### 2. microros_hand_node(STM32)
+- STM32G474RE run micro-ROS Client
+- Receives finger states from the agent
+- Generates PWM signals
+- Controls all 5 servos in real time
 
 ## Mechanical Structure
 
@@ -46,54 +53,28 @@ The complete system consists of 2 major node:
 - Frequency: 50 Hz
 - Pulse range: 500–2500 µs (0–180°)
 
-------------------------------------------------------------
-
-## Software Architecture
-Processing pipeline
-
-Camera  
-→ OpenCV  
-→ Mediapipe  
-→ vision_node.py (ROS2)  
-→ /finger_states  
-→ micro-ROS Agent  
-→ STM32 firmware  
-→ PWM Servo Control  
-
-
-
-## 10. Project Structure
-
-```
-hand_ws/
- ├── src/
- │   └── hand_controller/
- │       ├── vision_node.py
- │       └── ...
- ├── firmware/
- │   └── nucleo_uros/
- │       ├── Core/
- │       ├── Drivers/
- │       └── micro_ros_stm32cubemx_utils/
- ├── README.md
- └── ...
-```
-
-
 
 ## 11. How to Run
 
-### 1) Start micro-ROS Agent
-```
-ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0 -b 115200
-```
+for ROS2 Humble you can follow this guidline https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html
 
-### 2) Run vision node
-```
-ros2 run hand_controller vision_node
-```
+---
+sudo apt update && sudo apt upgrade -y
+---
 
-### 3) ตรวจสอบค่า
-```
-ros2 topic echo /finger_states
-```
+
+Install Required Tools
+
+---
+sudo apt install python3-colcon-common-extensions -y
+sudo apt install ros-dev-tools -y
+pip3 install opencv-python mediapipe numpy
+sudo apt install ros-humble-micro-ros-agent -y
+---
+
+
+
+
+
+
+
