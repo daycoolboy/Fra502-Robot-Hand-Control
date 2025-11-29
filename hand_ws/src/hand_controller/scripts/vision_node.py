@@ -42,7 +42,7 @@ def stable(buff):
 
 class FingerArrayPublisher(Node):
     def __init__(self):
-        super().__init__('finger_array_pub')
+        super().__init__('vision_node')
         self.pub = self.create_publisher(Int32MultiArray, 'finger_states', 10)
 
     def publish_fingers(self, arr):
