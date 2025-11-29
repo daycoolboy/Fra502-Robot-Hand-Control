@@ -48,6 +48,8 @@ The system consists of 2 major node:
 - Tendon-driven flexion and Rubber for retracting
 - Five servos for direct actuation of each finger
 
+![Demo Image](https://drive.google.com/uc?export=view&id=16WGPum65DUiu9hxenZ87CaHENc8OIv-R)
+
 
 ## Electrical System
 
