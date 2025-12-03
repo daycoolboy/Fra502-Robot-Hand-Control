@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/bin/python3
+
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -7,66 +8,108 @@ from rclpy.node import Node
 from std_msgs.msg import Int32MultiArray
 from collections import deque
 
+
+from plotter import AngleRecorder
+rec = AngleRecorder()
+
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 
 
-# ===============================
-#  Finger Logic
-# ===============================
 
-def finger_is_closed(hand_landmarks, idx_tip, idx_pip):
-    tip = hand_landmarks.landmark[idx_tip].y
-    pip = hand_landmarks.landmark[idx_pip].y
-    return tip > pip    
+def find_camera():
+    for i in range(5):
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            continue
+
+        ok, frame = cap.read()
+        if ok:
+            print(f"✅ Camera found at index {i}")
+            return cap
+
+        cap.release()
+
+    print("❌ No camera found — skip vision, no plot, no crash.")
+    return None
 
 
-def thumb_is_closed(hand_landmarks):
-    tip = hand_landmarks.landmark[4].x
-    ip  = hand_landmarks.landmark[3].x
-    return tip < ip     
+
+def angle(a, b, c):
+    ba = np.array([a.x - b.x, a.y - b.y, a.z - b.z])
+    bc = np.array([c.x - b.x, c.y - b.y, c.z - b.z])
+
+    cosang = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    cosang = np.clip(cosang, -1.0, 1.0)
+    return np.degrees(np.arccos(cosang))
 
 
-# ===============================
-# Debounce / Stabilizer
-# ===============================
+def angle_to_servo(ang):
+    ang = max(60, min(ang, 180))
+    x = (ang - 60) / (180 - 60)
+    return int(np.sin(x * np.pi / 2) * 180)
+
 
 def stable(buff):
-    """Return majority value (0/1) of the buffer"""
-    return 1 if sum(buff) > len(buff) / 2 else 0
+    return int(sum(buff) / len(buff))
 
 
-# ===============================
-# ROS2 Node
-# ===============================
+def limit_step(prev, new, step=10):
+    if new > prev + step:
+        return prev + step
+    if new < prev - step:
+        return prev - step
+    return new
 
-class FingerArrayPublisher(Node):
+
+
+
+class Vision(Node):
     def __init__(self):
         super().__init__('vision_node')
+
+        # publisher
         self.pub = self.create_publisher(Int32MultiArray, 'finger_states', 10)
+
+        # subscribe feedback from MCU
+        self.create_subscription(
+            Int32MultiArray,
+            "servo_feedback",
+            self.feedback_callback,
+            10
+        )
+
+        self.prev_thumb = 0
 
     def publish_fingers(self, arr):
         msg = Int32MultiArray()
         msg.data = arr
         self.pub.publish(msg)
 
+    def feedback_callback(self, msg):
+        # servo feedback จาก MCU
+        rec.add_feedback(list(msg.data))
 
-# ===============================
-# Main
-# ===============================
+
 
 def main():
     rclpy.init()
-    node = FingerArrayPublisher()
+    node = Vision()
 
-    cap = cv2.VideoCapture(0)
+    # กล้อง auto-detect
+    cap = find_camera()
+    if cap is None:
+        rclpy.shutdown()
+        return
 
-    # Create 3-frame buffer for each finger
-    buff_t = deque(maxlen=3)
-    buff_i = deque(maxlen=3)
-    buff_m = deque(maxlen=3)
-    buff_r = deque(maxlen=3)
-    buff_p = deque(maxlen=3)
+    # smoothing buffer
+    buff = [
+        deque(maxlen=10),
+        deque(maxlen=4),
+        deque(maxlen=4),
+        deque(maxlen=4),
+        deque(maxlen=4),
+    ]
 
     with mp_hands.Hands(
         max_num_hands=1,
@@ -75,11 +118,13 @@ def main():
     ) as hands:
 
         while cap.isOpened():
+
             rclpy.spin_once(node, timeout_sec=0)
 
             ok, frame = cap.read()
             if not ok:
-                continue
+                print("⚠ Frame read failed")
+                break
 
             frame = cv2.flip(frame, 1)
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -88,49 +133,59 @@ def main():
             if result.multi_hand_landmarks:
                 hand = result.multi_hand_landmarks[0]
 
-                # Detect each finger
-                thumb_closed  = not thumb_is_closed(hand)
-                index_closed  = finger_is_closed(hand, 8, 6)
-                middle_closed = finger_is_closed(hand, 12, 10)
-                ring_closed   = finger_is_closed(hand, 16, 14)
-                pinky_closed  = finger_is_closed(hand, 20, 18)
+                dx = hand.landmark[4].x - hand.landmark[2].x
+                dx_min = -0.09
+                dx_max = 0.07
 
-                # Convert to 0/1 (1=open, 0=closed)
-                thumb  = int(not thumb_closed)
-                index  = int(not index_closed)
-                middle = int(not middle_closed)
-                ring   = int(not ring_closed)
-                pinky  = int(not pinky_closed)
+                norm = np.interp(dx, [dx_min, dx_max], [1.0, 0.0])
+                norm = np.clip(norm, 0.0, 1.0)
 
-                # Add into buffer
-                buff_t.append(thumb)
-                buff_i.append(index)
-                buff_m.append(middle)
-                buff_r.append(ring)
-                buff_p.append(pinky)
+                raw_thumb = int(norm * 180)
+                thumb_servo = limit_step(node.prev_thumb, raw_thumb, step=10)
+                node.prev_thumb = thumb_servo
 
-                # Use stable output (majority vote)
-                thumb_s  = stable(buff_t)
-                index_s  = stable(buff_i)
-                middle_s = stable(buff_m)
-                ring_s   = stable(buff_r)
-                pinky_s  = stable(buff_p)
+                idx_ang = angle(hand.landmark[5], hand.landmark[6], hand.landmark[8])
+                mid_ang = angle(hand.landmark[9], hand.landmark[10], hand.landmark[12])
+                ring_ang = angle(hand.landmark[13], hand.landmark[14], hand.landmark[16])
+                pin_ang = angle(hand.landmark[17], hand.landmark[18], hand.landmark[20])
 
-                stable_arr = [thumb_s, index_s, middle_s, ring_s, pinky_s]
+                index_servo = angle_to_servo(idx_ang)
+                middle_servo = angle_to_servo(mid_ang)
+                ring_servo = angle_to_servo(ring_ang)
+                pinky_servo = angle_to_servo(pin_ang)
 
-                print("State: ", stable_arr)
 
-                # ส่งเป็น array ไป micro-ROS
-                node.publish_fingers(stable_arr)
+                angles = [
+                    thumb_servo,
+                    index_servo,
+                    middle_servo,
+                    ring_servo,
+                    pinky_servo,
+                ]
 
-                # Draw skeleton
+                for k in range(5):
+                    buff[k].append(angles[k])
+
+                final_angles = [stable(buff[k]) for k in range(5)]
+
+                print("Angles:", final_angles)
+
+
+                rec.add(final_angles)
+
+                node.publish_fingers(final_angles)
+
                 mp_drawing.draw_landmarks(frame, hand, mp_hands.HAND_CONNECTIONS)
 
             cv2.imshow("Hand Detection", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+
     cap.release()
+    cv2.destroyAllWindows()
+
+    rec.plot()         
     rclpy.shutdown()
 
 
