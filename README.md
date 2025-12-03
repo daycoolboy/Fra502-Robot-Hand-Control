@@ -193,4 +193,4 @@ Move your right hand robotic hand moves in real time
 
 For the system test, I have made a simple video for you guy to watch.
  
-[![Robot Hand Demo](https://img.youtube.com/vi/V4dZimPWutI/0.jpg)](https://www.youtube.com/watch?v=V4dZimPWutI)
+[🎥 Demo Video (YouTube)](https://youtu.be/XuOGI15YNFc?si=NSAwgebZN-E9HBus)
