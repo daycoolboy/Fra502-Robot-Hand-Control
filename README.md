@@ -2,17 +2,21 @@
 
 This project presents a vision-based teleoperation system for a 5-finger robotic hand. The system uses camera-based gesture recognition combined with ROS2 and micro-ROS(LPUART1) to drive five servo motors in real time. The user simply moves their real hand, and the robotic hand follows by detecting finger poses through Mediapipe and sending the results to an embedded MCU.
 
+The system supports data logging and dual-graph plotting
 
 ## System Overview
-System workflow
-→ Camera  
-→ OpenCV  
-→ Mediapipe  
-→ vision_node.py (ROS2)  
-→ /finger_states  
-→ micro-ROS Agent  
-→ STM32 firmware  
-→ PWM Servo Control  
+-PC side (ROS2 – Python)
+-MediaPipe landmark detection
+-Finger angle computation
+-Smoothing + limit_step
+-Publishes /finger_states
+-Records angle data for plotting (Desired + Feedback)
+-STM32 side (micro-ROS)
+-Subscribes to /finger_states
+-Converts angle → PWM (TIM2, TIM3)
+-Controls 5 MG996R servos
+-Publishes /servo_feedback back to PC
+
 
 ![Demo Image](https://drive.google.com/uc?export=view&id=1DAyUcjQwDTDwypAqe26dqotBo5nLHeH7)
 
@@ -22,23 +26,34 @@ The system consists of 2 major node:
 ### 1. Vision_node(PC-Ros2)
 - Captures video from a webcam
 - Uses Mediapipe Hands to detect 21 hand landmarks
-- Evaluates each finger state: open (1) or closed (0)
-- Publishes /finger_states to microros_hand_node with provide [T, I, M, R, P]
+- Computes **servo angles** for all 5 fingers  
+  - Thumb: uses **x-axis distance** between landmarks 2 and 4 + normalization  
+  - Other fingers: use **joint angle at PIP** and map to servo 0–180°  
+- Smoothing and limiting:
+  - Moving average with deque
+  - limit_step() to avoid sudden big jumps
+- Publishes topic:
+  /finger_states   (std_msgs/Int32MultiArray)
+  data = [thumb, index, middle, ring, pinky]
+  
+- Subscribes topic:
+ /servo_feedback  (std_msgs/Int32MultiArray)
+data = [thumb, index, middle, ring, pinky]  
 
-```
-/finger_states   (std_msgs/Int32MultiArray)
-```
 
 ### 2. microros_hand_node(STM32-Micro-Ros)
 - Runs micro-ROS Client on STM32G474RE
 - Subscribes to /finger_states
-- Converts finger states → servo angles
-- Generates PWM TIM2/TIM3
-- Controls all 5 servos motors in real time
-- 
+- For each finger:
+ - Reads angle value from the array
+ - Calls angle_to_pulse() to map 0–180° → 500–2500 µs
+ - Updates TIM2/TIM3 PWM compare register
+- Publishes feedback:
+  - /servo_feedback  (std_msgs/Int32MultiArray)
 ## Rqt graph
 
-![Demo Image](https://drive.google.com/uc?export=view&id=1BTa7gDMX81j447Gf6ygunLe-nqOfkbLI)
+![Demo Image](https://drive.google.com/uc?export=view&id=18ngL3L3Ifkf344Cjnxc-mJuXMpv1j-bx)
+
 
 
 ## Mechanical Structure
@@ -61,9 +76,22 @@ The system consists of 2 major node:
 
 ### PWM Output Pins  
 - TIM2 and TIM3
-- Frequency: 50 Hz
+- Frequency: 50 Hz (standard)
 - Pulse range: 500–2500 µs (0–180°)
 
+### Data Logging & Graph Comparison
+The system records two datasets automatically
+
+- Desired angles (from vision_node)
+  - After MediaPipe detection, angle calculation, smoothing, and limit_step
+  - Represent the intended servo command from vision
+- Servo feedback angles (from STM32)
+  - Read from /servo_feedback topic
+  - Represent the actual angles sent to PWM
+  - 
+In Python, we use a helper class AngleRecorder (in plotter.py) that saves for each frame
+
+![Demo Image](https://drive.google.com/uc?export=view&id=1d-3eLU3lDRC0PXjo-6ajEEltJfwlolX6)
 
 ## 11. How to Run
 
@@ -116,7 +144,7 @@ If everything have no problem, you will see webcam output and if you show the ri
 ### STM32 Side (micro-ROS)
 Required Applications STM32CubeIDE whitch you can download in this site https://www.st.com/en/development-tools/stm32cubeide.html
 
-Clone the Firmware Branch
+Clone the Firmware Branch and dont for got to build
 
 open ternimal 2 
 
