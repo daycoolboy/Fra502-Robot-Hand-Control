@@ -93,6 +93,8 @@ In Python, we use a helper class AngleRecorder (in plotter.py) that saves for ea
 
 ![Demo Image](https://drive.google.com/uc?export=view&id=1d-3eLU3lDRC0PXjo-6ajEEltJfwlolX6)
 
+The top graph is the angle the Vision system “commands” to rotate, while the bottom graph is the actual angle measured by the STM32. You can see that the graph shape of each finger is almost identical when increasing the angle, holding the angle, and releasing it. The STM32 graph is just a little slower and the end angle is a little lower, which is a result of the response of the servo and the actual mechanism, showing that the STM32 system can follow the angle command from the Vision well.
+
 ## 11. How to Run
 
 ROS2 installation instructions are available from the official documentation
