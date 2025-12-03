@@ -97,6 +97,17 @@ The top graph is the angle the Vision system “commands” to rotate, while the
 
 ## 11. How to Run
 
+### Requirements
+
+- Ubuntu 22.04 + ROS 2 Humble
+- Python 3.10+
+- Webcam (tested with Logitech C270)
+- STM32G474RE Nucleo-64 board
+- 5 × MG996R servo motors
+- 5V 5A power supply
+
+
+
 ROS2 installation instructions are available from the official documentation
 
 https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html
@@ -139,9 +150,12 @@ Run the vision node
 ros2 run hand_controller vision_node
 ```
 
-If everything have no problem, you will see webcam output and if you show the right hand to cam the finger state should pub arrays like [1,0,1,0,1] up to your hand condition i forgot to mention that this project can only be run on the right hand.
+If everything have no problem, you will see webcam output and if you show the right hand to cam the finger state should pub arrays like [180,180,180,180,180] up to your hand condition i forgot to mention that this project can only be run on the right hand.
 
-![Demo Image](https://drive.google.com/uc?export=view&id=1y2nNWWZv8Sxz5cm6wnFGONGF9EI6lhcL)
+![Demo Image](https://drive.google.com/uc?export=view&id=1-4t7ahAamZF1v8QD26irzphGtASMLLc7)
+
+
+
 
 ### STM32 Side (micro-ROS)
 Required Applications STM32CubeIDE whitch you can download in this site https://www.st.com/en/development-tools/stm32cubeide.html
@@ -195,4 +209,5 @@ Move your right hand robotic hand moves in real time
 
 For the system test, I have made a simple video for you guy to watch.
  
-[🎥 Demo Video (YouTube)](https://youtu.be/XuOGI15YNFc?si=NSAwgebZN-E9HBus)
+[![🎥 Demo Video (YouTube)](https://img.youtube.com/vi/XuOGI15YNFc/0.jpg)](https://youtu.be/XuOGI15YNFc?si=NSAwgebZN-E9HBus)
+
