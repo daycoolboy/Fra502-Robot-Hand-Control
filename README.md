@@ -160,9 +160,13 @@ If everything have no problem, you will see webcam output and if you show the ri
 ### STM32 Side (micro-ROS)
 Required Applications STM32CubeIDE whitch you can download in this site https://www.st.com/en/development-tools/stm32cubeide.html
 
-download the zip in brance STM and extract it
+download the zip in brance STM and extract it from this GG Drive
 
-Build the Firmware in STM32CubeIDE by open Projects from File System and search for ioc.
+https://drive.google.com/drive/u/0/folders/181EQ6m2CKQOseNnfFQCNj4SMrgE_yrq9
+
+Build the Firmware in STM32CubeIDE by colcon build and source in workspace
+
+open Projects from File System and search for ioc.
 
 Right-click and Build Project or Press the gear ioc
 
