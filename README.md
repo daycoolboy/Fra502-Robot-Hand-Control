@@ -150,7 +150,7 @@ Run the vision node
 ros2 run hand_controller vision_node
 ```
 
-If everything have no problem, you will see webcam output and if you show the right hand to cam the finger state should pub arrays like [180,180,180,180,180] up to your hand condition i forgot to mention that this project can only be run on the right hand.
+If everything have no problem, you will see webcam output and if you show the right hand to cam the finger state should pub arrays like [180,180,180,180,180] up to your hand condition i forgot to mention that this project can only be run on the right hand with Hand positioning likes img.
 
 ![Demo Image](https://drive.google.com/uc?export=view&id=1-4t7ahAamZF1v8QD26irzphGtASMLLc7)
 
