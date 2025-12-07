@@ -134,7 +134,7 @@ This repository contains two main branches, separating the PC-side ROS2 code(mai
 find your free space and clone my project
 
 ```
-git clone https://github.com/<your-repo>/hand_controller.git
+git clone https://github.com/daycoolboy/hand_controller.git
 ```
 
 go into workspace and build
@@ -167,7 +167,7 @@ open ternimal 2
 find your free space clone and Extract the files properly.
 
 ```
-git clone -b stm https://github.com/<your-github>/Fra502-Robot-Hand-Control.git
+git clone -b stm https://github.com/daycoolboy/Fra502-Robot-Hand-Control.git
 ```
 
 
