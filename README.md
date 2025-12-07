@@ -160,16 +160,7 @@ If everything have no problem, you will see webcam output and if you show the ri
 ### STM32 Side (micro-ROS)
 Required Applications STM32CubeIDE whitch you can download in this site https://www.st.com/en/development-tools/stm32cubeide.html
 
-Clone the Firmware Branch and dont for got to build
-
-open ternimal 2 
-
-find your free space clone and Extract the files properly.
-
-```
-git clone -b stm https://github.com/daycoolboy/Fra502-Robot-Hand-Control.git
-```
-
+download the zip in brance STM and extract it
 
 Build the Firmware in STM32CubeIDE by open Projects from File System and search for ioc.
 
