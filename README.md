@@ -164,13 +164,18 @@ download the zip in brance STM and extract it from this GG Drive
 
 https://drive.google.com/drive/u/0/folders/181EQ6m2CKQOseNnfFQCNj4SMrgE_yrq9
 
-Build the Firmware in STM32CubeIDE by colcon build and source in workspace
+Build the system i in workspace
 
-open Projects from File System and search for ioc.
+```
+colcon build
+source install/setup.bash
+```
+
+open Projects from File System and search for ioc in Firmware (in STM32CubeIDE).
 
 Right-click and Build Project or Press the gear ioc
 
-after that run the code to your stm
+after that run the code to your microcontroller
 
 If build is successful, you will see
 
